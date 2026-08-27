@@ -6,6 +6,7 @@ from backend.infrastructure.repositories import (
     JsonAccountRepository,
     JsonCategoryRepository,
     JsonTransactionRepository,
+    JsonRecurringExpenseRepository,
 )
 
 
@@ -14,6 +15,7 @@ class JsonUnitOfWork:
 
     def __init__(self, data: dict, persist):
         self._data = data
+        self._data.setdefault("scheduled_expenses", [])
         self._persist = persist
         self._active = False
         self._dirty = False
@@ -21,6 +23,7 @@ class JsonUnitOfWork:
         self.accounts = JsonAccountRepository(data["accounts"], self._changed)
         self.categories = JsonCategoryRepository(data["categories"], self._changed)
         self.transactions = JsonTransactionRepository(data["transactions"], self._changed)
+        self.recurring_expenses = JsonRecurringExpenseRepository(data["scheduled_expenses"], self._changed)
 
     def __enter__(self) -> Self:
         if self._active:

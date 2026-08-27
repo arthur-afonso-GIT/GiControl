@@ -10,6 +10,7 @@ from backend.application.services import (
     CreateAccountRequest,
     CreateTransactionRequest,
     SaveCategoryRequest,
+    SaveRecurringExpenseRequest,
     UpdateTransactionRequest,
 )
 from backend.domain import AccountType, Money, TransactionType
@@ -21,10 +22,20 @@ class AccountCreate(BaseModel):
     type: AccountType
     initial_balance: float = 0
     monthly_income: float = Field(default=0, ge=0)
+    income_day: int | None = Field(default=None, ge=1, le=31)
+    income_category_id: str | None = None
+    income_start_date: date | None = None
 
 
 class AccountValueUpdate(BaseModel):
     value: float
+
+
+class AccountIncomeScheduleUpdate(BaseModel):
+    monthly_income: float = Field(ge=0)
+    income_day: int | None = Field(default=None, ge=1, le=31)
+    income_category_id: str | None = None
+    income_start_date: date | None = None
 
 
 class CategoryWrite(BaseModel):
@@ -52,6 +63,17 @@ class TransactionUpdate(BaseModel):
     type: TransactionType
     date: date
     is_fixed: bool = False
+
+
+class RecurringExpenseWrite(BaseModel):
+    name: str
+    amount: float = Field(gt=0)
+    account_id: str
+    category_id: str
+    due_day: int = Field(ge=1, le=31)
+    start_date: date
+    end_date: date | None = None
+    active: bool = True
 
 
 def create_api(container: ServiceContainer | None = None) -> FastAPI:
@@ -82,6 +104,8 @@ def create_api(container: ServiceContainer | None = None) -> FastAPI:
                 account_type=payload.type,
                 initial_balance=Money.from_value(payload.initial_balance),
                 monthly_income=Money.from_value(payload.monthly_income),
+                income_day=payload.income_day, income_category_id=payload.income_category_id,
+                income_start_date=payload.income_start_date,
             ))
             return _account(account)
 
@@ -101,6 +125,15 @@ def create_api(container: ServiceContainer | None = None) -> FastAPI:
             account = services.accounts.update_monthly_income(
                 account_id, Money.from_value(payload.value)
             )
+            if account is None:
+                raise HTTPException(status_code=404, detail="Conta não encontrada")
+            return _account(account)
+
+    @api.put("/accounts/{account_id}/income-schedule")
+    def update_account_income_schedule(account_id: str, payload: AccountIncomeScheduleUpdate):
+        with lock:
+            account = services.accounts.update_income_schedule(account_id, Money.from_value(payload.monthly_income),
+                payload.income_day, payload.income_category_id, payload.income_start_date)
             if account is None:
                 raise HTTPException(status_code=404, detail="Conta não encontrada")
             return _account(account)
@@ -214,6 +247,49 @@ def create_api(container: ServiceContainer | None = None) -> FastAPI:
                 "usage_percentage": float(item.usage_percentage),
             } for item in services.budgets.get_month(reference)]
 
+    @api.get("/scheduled-incomes")
+    def scheduled_incomes(month: str | None = None):
+        reference = _month_reference(month)
+        with lock:
+            return [{"account_id": item.account_id, "account_name": item.account_name,
+                     "amount": float(item.amount.amount), "due_date": item.due_date.isoformat(),
+                     "category_id": item.category_id, "confirmed": item.confirmed}
+                    for item in services.scheduled_incomes.list_month(reference)]
+
+    @api.post("/scheduled-incomes/{account_id}/{month}/confirm")
+    def confirm_scheduled_income(account_id: str, month: str):
+        reference = _month_reference(month)
+        with lock:
+            return _transaction(services.scheduled_incomes.confirm(account_id, reference))
+
+    @api.get("/recurring-expenses")
+    def list_recurring_expenses():
+        with lock: return [_recurring_expense(item) for item in services.recurring_expenses.list_all()]
+
+    @api.post("/recurring-expenses", status_code=status.HTTP_201_CREATED)
+    def create_recurring_expense(payload: RecurringExpenseWrite):
+        with lock: return _recurring_expense(services.recurring_expenses.save(_recurring_expense_request(payload)))
+
+    @api.put("/recurring-expenses/{expense_id}")
+    def update_recurring_expense(expense_id: str, payload: RecurringExpenseWrite):
+        with lock: return _recurring_expense(services.recurring_expenses.save(_recurring_expense_request(payload), expense_id))
+
+    @api.delete("/recurring-expenses/{expense_id}", status_code=status.HTTP_204_NO_CONTENT)
+    def delete_recurring_expense(expense_id: str):
+        with lock:
+            if not services.recurring_expenses.delete(expense_id): raise HTTPException(status_code=404, detail="Despesa prevista não encontrada")
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+    @api.get("/expense-occurrences")
+    def expense_occurrences(month: str | None = None):
+        reference = _month_reference(month)
+        with lock: return [{**_recurring_expense(item.expense), "due_date": item.due_date.isoformat(), "confirmed": item.confirmed}
+                           for item in services.recurring_expenses.list_month(reference)]
+
+    @api.post("/expense-occurrences/{expense_id}/{month}/confirm")
+    def confirm_expense_occurrence(expense_id: str, month: str):
+        with lock: return _transaction(services.recurring_expenses.confirm(expense_id, _month_reference(month)))
+
     return api
 
 
@@ -232,6 +308,18 @@ def _category_request(payload: CategoryWrite) -> SaveCategoryRequest:
     )
 
 
+def _recurring_expense_request(payload: RecurringExpenseWrite) -> SaveRecurringExpenseRequest:
+    return SaveRecurringExpenseRequest(name=payload.name, amount=Money.from_value(payload.amount),
+        account_id=payload.account_id, category_id=payload.category_id, due_day=payload.due_day,
+        start_date=payload.start_date, end_date=payload.end_date, active=payload.active)
+
+
+def _recurring_expense(item) -> dict:
+    return {"id": item.id, "name": item.name, "amount": float(item.amount.amount), "account_id": item.account_id,
+            "category_id": item.category_id, "due_day": item.due_day, "start_date": item.start_date.isoformat(),
+            "end_date": item.end_date.isoformat() if item.end_date else None, "active": item.active}
+
+
 def _account(account) -> dict:
     return {
         "id": account.id,
@@ -239,6 +327,9 @@ def _account(account) -> dict:
         "type": account.account_type.value,
         "balance": float(account.balance.amount),
         "monthly_income": float(account.monthly_income.amount),
+        "income_day": account.income_day,
+        "income_category_id": account.income_category_id,
+        "income_start_date": account.income_start_date.isoformat() if account.income_start_date else None,
     }
 
 

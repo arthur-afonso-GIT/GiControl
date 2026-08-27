@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { api } from '../api/client'
-import type { Account, AccountCreate, AccountType } from '../api/types'
+import type { Account, AccountCreate, AccountType, Category } from '../api/types'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import './AccountsPage.css'
 
 const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 const accountTypes: AccountType[] = ['Conta Corrente', 'Carteira', 'Poupança', 'Cartão']
-const emptyAccount: AccountCreate = { name: '', type: 'Conta Corrente', initial_balance: 0, monthly_income: 0 }
+const today = () => new Date().toISOString().slice(0, 10)
+const emptyAccount: AccountCreate = { name: '', type: 'Conta Corrente', initial_balance: 0, monthly_income: 0, income_day: null, income_category_id: null, income_start_date: today() }
 
 export function AccountsPage() {
   const [accounts, setAccounts] = useState<Account[]>([])
+  const [incomeCategories, setIncomeCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -23,7 +25,7 @@ export function AccountsPage() {
   const loadAccounts = useCallback(async () => {
     setLoading(true)
     setError(null)
-    try { setAccounts(await api.accounts.list()) }
+    try { const [accountData, categoryData] = await Promise.all([api.accounts.list(), api.categories.list()]); setAccounts(accountData); setIncomeCategories(categoryData.filter((item) => item.type === 'Receita')) }
     catch (requestError) { setError(messageFrom(requestError)) }
     finally { setLoading(false) }
   }, [])
@@ -40,7 +42,7 @@ export function AccountsPage() {
 
   function openEdit(account: Account) {
     setEditing(account)
-    const next = { name: account.name, type: account.type, initial_balance: account.balance, monthly_income: account.monthly_income }
+    const next = { name: account.name, type: account.type, initial_balance: account.balance, monthly_income: account.monthly_income, income_day: account.income_day, income_category_id: account.income_category_id, income_start_date: account.income_start_date ?? today() }
     setForm(next)
     setInitialForm(next)
     setFormOpen(true)
@@ -58,7 +60,7 @@ export function AccountsPage() {
     try {
       if (editing) {
         await api.accounts.updateBalance(editing.id, form.initial_balance)
-        await api.accounts.updateMonthlyIncome(editing.id, form.monthly_income)
+        await api.accounts.updateIncomeSchedule(editing.id, { monthly_income: form.monthly_income, income_day: form.income_day, income_category_id: form.income_category_id, income_start_date: form.income_start_date })
       } else {
         await api.accounts.create(form)
       }
@@ -118,6 +120,7 @@ export function AccountsPage() {
           {!editing && <><label>Nome da conta<input required maxLength={80} value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Ex.: Conta principal" /></label><label>Tipo<select value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value as AccountType })}>{accountTypes.map((type) => <option key={type}>{type}</option>)}</select></label></>}
           <label>{editing ? 'Saldo atual' : 'Saldo inicial'}<div className="money-input"><span>R$</span><input type="number" step="0.01" placeholder="0.00" value={form.initial_balance === 0 ? '' : form.initial_balance} onFocus={(event) => event.currentTarget.select()} onChange={(event) => setForm({ ...form, initial_balance: event.target.value === '' ? 0 : Number(event.target.value) })} /></div></label>
           <label>Renda mensal prevista<div className="money-input"><span>R$</span><input min="0" type="number" step="0.01" placeholder="0.00" value={form.monthly_income === 0 ? '' : form.monthly_income} onFocus={(event) => event.currentTarget.select()} onChange={(event) => setForm({ ...form, monthly_income: event.target.value === '' ? 0 : Number(event.target.value) })} /></div></label>
+          {form.monthly_income > 0 && <><div className="form-columns"><label>Dia do recebimento<input required min="1" max="31" type="number" value={form.income_day ?? ''} onChange={(event) => setForm({ ...form, income_day: event.target.value === '' ? null : Number(event.target.value) })} /></label><label>Início<input required type="date" value={form.income_start_date ?? ''} onChange={(event) => setForm({ ...form, income_start_date: event.target.value })} /></label></div><label>Categoria da receita<select required value={form.income_category_id ?? ''} onChange={(event) => setForm({ ...form, income_category_id: event.target.value })}><option value="" disabled>Selecione</option>{incomeCategories.map((category) => <option value={category.id} key={category.id}>{category.name}</option>)}</select></label><p className="form-note">A renda aparecerá como prevista e só entrará no saldo após sua confirmação.</p></>}
           {editing && <p className="form-note">Nome e tipo permanecem preservados nesta primeira versão.</p>}
           <div className="drawer-actions"><button className="secondary-button" type="button" onClick={requestClose}>Cancelar</button><button className="primary-button" disabled={saving} type="submit">{saving ? 'Salvando…' : editing ? 'Salvar alterações' : 'Criar conta'}</button></div>
         </form>

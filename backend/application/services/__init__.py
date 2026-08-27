@@ -16,6 +16,8 @@ from backend.application.services.transaction_service import (
     TransactionService,
     UpdateTransactionRequest,
 )
+from backend.application.services.scheduled_income_service import ScheduledIncome, ScheduledIncomeService
+from backend.application.services.recurring_expense_service import ExpenseOccurrence, RecurringExpenseService, SaveRecurringExpenseRequest
 
 __all__ = [
     "AccountService",
@@ -27,6 +29,11 @@ __all__ = [
     "DashboardMetrics",
     "DashboardQueryService",
     "SaveCategoryRequest",
+    "ScheduledIncome",
+    "ScheduledIncomeService",
+    "ExpenseOccurrence",
+    "RecurringExpenseService",
+    "SaveRecurringExpenseRequest",
     "TransactionService",
     "UpdateTransactionRequest",
 ]

@@ -6,6 +6,8 @@ from backend.application.services import (
     BudgetQueryService,
     CategoryService,
     DashboardQueryService,
+    ScheduledIncomeService,
+    RecurringExpenseService,
     TransactionService,
 )
 from backend.infrastructure.persistence_bootstrap import create_default_data_store
@@ -25,6 +27,8 @@ class ServiceContainer:
         self.categories = CategoryService(self.unit_of_work)
         self.budgets = BudgetQueryService(self.unit_of_work)
         self.dashboard = DashboardQueryService(self.unit_of_work)
+        self.scheduled_incomes = ScheduledIncomeService(self.unit_of_work)
+        self.recurring_expenses = RecurringExpenseService(self.unit_of_work)
         self.transactions = TransactionService(self.unit_of_work)
 
 

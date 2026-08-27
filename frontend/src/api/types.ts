@@ -1,7 +1,7 @@
 export type Health = { status: 'ok' }
 export type AccountType = 'Carteira' | 'Conta Corrente' | 'Poupança' | 'Cartão'
-export type Account = { id: string; name: string; type: AccountType; balance: number; monthly_income: number }
-export type AccountCreate = { name: string; type: AccountType; initial_balance: number; monthly_income: number }
+export type Account = { id: string; name: string; type: AccountType; balance: number; monthly_income: number; income_day?: number | null; income_category_id?: string | null; income_start_date?: string | null }
+export type AccountCreate = { name: string; type: AccountType; initial_balance: number; monthly_income: number; income_day?: number | null; income_category_id?: string | null; income_start_date?: string | null }
 export type TransactionType = 'Receita' | 'Despesa'
 export type Category = { id: string; name: string; type: TransactionType; monthly_limit: number }
 export type CategoryWrite = { name: string; type: TransactionType; monthly_limit: number }
@@ -10,3 +10,7 @@ export type TransactionCreate = { amount: number; date: string; category_id: str
 export type TransactionUpdate = Omit<TransactionCreate, 'installments'>
 export type DashboardMetrics = { current_balance: number; monthly_income: number; monthly_expense: number; savings: number; recent_transactions: Transaction[] }
 export type CategoryBudget = { category_id: string; category_name: string; limit: number; spent: number; remaining: number; usage_percentage: number }
+export type ScheduledIncome = { account_id: string; account_name: string; amount: number; due_date: string; category_id: string; confirmed: boolean }
+export type RecurringExpense = { id: string; name: string; amount: number; account_id: string; category_id: string; due_day: number; start_date: string; end_date?: string | null; active: boolean }
+export type ExpenseOccurrence = RecurringExpense & { due_date: string; confirmed: boolean }
+export type RecurringExpenseWrite = Omit<RecurringExpense, 'id'>

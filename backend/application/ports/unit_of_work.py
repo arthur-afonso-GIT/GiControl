@@ -4,12 +4,14 @@ from typing import Protocol, Self
 from backend.application.ports.account_repository import AccountRepository
 from backend.application.ports.category_repository import CategoryRepository
 from backend.application.ports.transaction_repository import TransactionRepository
+from backend.application.ports.recurring_expense_repository import RecurringExpenseRepository
 
 
 class UnitOfWork(Protocol):
     accounts: AccountRepository
     categories: CategoryRepository
     transactions: TransactionRepository
+    recurring_expenses: RecurringExpenseRepository
 
     def __enter__(self) -> Self: ...
 

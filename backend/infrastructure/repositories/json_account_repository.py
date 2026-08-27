@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from datetime import date
 
 from backend.domain import Account, AccountType, Money
 
@@ -46,14 +47,21 @@ class JsonAccountRepository:
             account_type=AccountType(record["type"]),
             balance=Money.from_value(record.get("balance", 0.0)),
             monthly_income=Money.from_value(record.get("monthly_income", 0.0)),
+            income_day=record.get("income_day"),
+            income_category_id=record.get("income_category_id"),
+            income_start_date=date.fromisoformat(record["income_start_date"]) if record.get("income_start_date") else None,
         )
 
     @staticmethod
     def _to_record(account: Account) -> dict:
-        return {
+        record = {
             "id": account.id,
             "name": account.name,
             "type": account.account_type.value,
             "balance": float(account.balance.amount),
             "monthly_income": float(account.monthly_income.amount),
         }
+        if account.income_day is not None:
+            record.update({"income_day": account.income_day, "income_category_id": account.income_category_id,
+                           "income_start_date": account.income_start_date.isoformat() if account.income_start_date else None})
+        return record

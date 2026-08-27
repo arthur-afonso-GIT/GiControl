@@ -1,5 +1,6 @@
 import uuid
 from dataclasses import dataclass, replace
+from datetime import date
 
 from backend.application.ports import UnitOfWork
 from backend.domain import Account, AccountType, Money
@@ -11,6 +12,9 @@ class CreateAccountRequest:
     account_type: AccountType
     initial_balance: Money
     monthly_income: Money
+    income_day: int | None = None
+    income_category_id: str | None = None
+    income_start_date: date | None = None
 
 
 class AccountService:
@@ -26,6 +30,9 @@ class AccountService:
             account_type=request.account_type,
             balance=request.initial_balance,
             monthly_income=request.monthly_income,
+            income_day=request.income_day,
+            income_category_id=request.income_category_id,
+            income_start_date=request.income_start_date,
         )
         self._unit_of_work.accounts.save(account)
         return account
@@ -43,6 +50,16 @@ class AccountService:
         if account is None:
             return None
         updated = replace(account, monthly_income=income)
+        self._unit_of_work.accounts.save(updated)
+        return updated
+
+    def update_income_schedule(self, account_id: str, income: Money, income_day: int | None,
+                               category_id: str | None, start_date: date | None) -> Account | None:
+        account = self._unit_of_work.accounts.get(account_id)
+        if account is None:
+            return None
+        updated = replace(account, monthly_income=income, income_day=income_day,
+                          income_category_id=category_id, income_start_date=start_date)
         self._unit_of_work.accounts.save(updated)
         return updated
 

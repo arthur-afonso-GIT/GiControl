@@ -3,11 +3,13 @@ import { AccountsPage } from './pages/AccountsPage'
 import { CategoriesPage } from './pages/CategoriesPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { TransactionsPage } from './pages/TransactionsPage'
+import { AgendaPage } from './pages/AgendaPage'
 import './App.css'
 
 const navigation = [
   { id: 'dashboard', label: 'Visão geral', icon: '⌂' },
   { id: 'transactions', label: 'Transações', icon: '↔' },
+  { id: 'agenda', label: 'Agenda', icon: '◷' },
   { id: 'accounts', label: 'Contas', icon: '◫' },
   { id: 'categories', label: 'Categorias', icon: '◉' },
 ] as const
@@ -24,7 +26,7 @@ function App() {
       <nav aria-label="Navegação principal"><p className="nav-label">Menu</p>{navigation.map((item) => <button className={`nav-item ${activePage === item.id ? 'active' : ''}`} key={item.id} type="button" onClick={() => setActivePage(item.id)}><span aria-hidden="true">{item.icon}</span>{item.label}</button>)}</nav>
       <div className="sidebar-footer"><div className={`connection-dot ${connected ? 'online' : ''}`} /><div><span>{connected ? 'API conectada' : 'API desconectada'}</span><small>Persistência SQLite</small></div></div>
     </aside>
-    <main>{activePage === 'accounts' ? <AccountsPage /> : activePage === 'transactions' ? <TransactionsPage /> : activePage === 'categories' ? <CategoriesPage /> : <DashboardPage onConnectionChange={handleConnectionChange} />}</main>
+    <main>{activePage === 'accounts' ? <AccountsPage /> : activePage === 'transactions' ? <TransactionsPage /> : activePage === 'agenda' ? <AgendaPage /> : activePage === 'categories' ? <CategoriesPage /> : <DashboardPage onConnectionChange={handleConnectionChange} />}</main>
   </div>
 }
 

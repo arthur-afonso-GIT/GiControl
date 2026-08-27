@@ -1,4 +1,4 @@
-import type { Account, AccountCreate, Category, CategoryBudget, CategoryWrite, DashboardMetrics, Health, Transaction, TransactionCreate, TransactionUpdate } from './types'
+import type { Account, AccountCreate, Category, CategoryBudget, CategoryWrite, DashboardMetrics, ExpenseOccurrence, Health, RecurringExpense, RecurringExpenseWrite, ScheduledIncome, Transaction, TransactionCreate, TransactionUpdate } from './types'
 
 type RequestOptions = {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
@@ -26,11 +26,24 @@ export const api = {
   health: () => request<Health>('/health'),
   dashboard: (month?: string) => request<DashboardMetrics>(`/dashboard${month ? `?month=${encodeURIComponent(month)}` : ''}`),
   budgets: (month?: string) => request<CategoryBudget[]>(`/budgets${month ? `?month=${encodeURIComponent(month)}` : ''}`),
+  scheduledIncomes: {
+    list: (month: string) => request<ScheduledIncome[]>(`/scheduled-incomes?month=${encodeURIComponent(month)}`),
+    confirm: (accountId: string, month: string) => request<Transaction>(`/scheduled-incomes/${accountId}/${month}/confirm`, { method: 'POST' }),
+  },
+  recurringExpenses: {
+    list: () => request<RecurringExpense[]>('/recurring-expenses'),
+    occurrences: (month: string) => request<ExpenseOccurrence[]>(`/expense-occurrences?month=${encodeURIComponent(month)}`),
+    create: (item: RecurringExpenseWrite) => request<RecurringExpense>('/recurring-expenses', { method: 'POST', body: item }),
+    update: (id: string, item: RecurringExpenseWrite) => request<RecurringExpense>(`/recurring-expenses/${id}`, { method: 'PUT', body: item }),
+    delete: (id: string) => request<void>(`/recurring-expenses/${id}`, { method: 'DELETE' }),
+    confirm: (id: string, month: string) => request<Transaction>(`/expense-occurrences/${id}/${month}/confirm`, { method: 'POST' }),
+  },
   accounts: {
     list: () => request<Account[]>('/accounts'),
     create: (account: AccountCreate) => request<Account>('/accounts', { method: 'POST', body: account }),
     updateBalance: (accountId: string, value: number) => request<Account>(`/accounts/${accountId}/balance`, { method: 'PATCH', body: { value } }),
     updateMonthlyIncome: (accountId: string, value: number) => request<Account>(`/accounts/${accountId}/monthly-income`, { method: 'PATCH', body: { value } }),
+    updateIncomeSchedule: (accountId: string, schedule: Omit<AccountCreate, 'name' | 'type' | 'initial_balance'>) => request<Account>(`/accounts/${accountId}/income-schedule`, { method: 'PUT', body: schedule }),
     delete: (accountId: string) => request<void>(`/accounts/${accountId}`, { method: 'DELETE' }),
   },
   categories: {

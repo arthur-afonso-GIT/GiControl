@@ -20,6 +20,7 @@ export function TransactionsPage() {
   const [initialForm, setInitialForm] = useState<TransactionCreate | null>(null)
   const [confirmExit, setConfirmExit] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<Transaction | null>(null)
+  const [editing, setEditing] = useState<Transaction | null>(null)
   const [form, setForm] = useState<TransactionCreate>(emptyTransaction)
   const [month, setMonth] = useState(today().slice(0, 7))
   const [type, setType] = useState<'Todos' | TransactionType>('Todos')
@@ -53,12 +54,17 @@ export function TransactionsPage() {
     const next = emptyTransaction()
     next.account_id = accounts[0]?.id ?? ''
     next.category_id = categories.find((category) => category.type === next.type)?.id ?? ''
-    setForm(next); setInitialForm(next); setDrawerOpen(true)
+    setEditing(null); setForm(next); setInitialForm(next); setDrawerOpen(true)
+  }
+
+  function openEdit(transaction: Transaction) {
+    const next: TransactionCreate = { amount: transaction.amount, date: transaction.date, category_id: transaction.category_id, account_id: transaction.account_id, description: transaction.description, type: transaction.type, installments: 1, is_fixed: transaction.is_fixed }
+    setEditing(transaction); setForm(next); setInitialForm(next); setDrawerOpen(true)
   }
 
   function requestClose() {
     if (formIsDirty) setConfirmExit(true)
-    else { setDrawerOpen(false); setInitialForm(null) }
+    else { setDrawerOpen(false); setInitialForm(null); setEditing(null) }
   }
 
   function changeType(nextType: TransactionType) {
@@ -67,7 +73,11 @@ export function TransactionsPage() {
 
   async function submit(event: FormEvent) {
     event.preventDefault(); setSaving(true); setError(null)
-    try { await api.transactions.create(form); setDrawerOpen(false); setInitialForm(null); await load() }
+    try {
+      if (editing) { const { installments: _installments, ...update } = form; await api.transactions.update(editing.id, update) }
+      else await api.transactions.create(form)
+      setDrawerOpen(false); setInitialForm(null); setEditing(null); await load()
+    }
     catch (requestError) { setError(messageFrom(requestError)) }
     finally { setSaving(false) }
   }
@@ -116,7 +126,7 @@ export function TransactionsPage() {
           <div className="transaction-main"><span className={transaction.type === 'Receita' ? 'income-icon' : 'expense-icon'}>{transaction.type === 'Receita' ? '↗' : '↘'}</span><div><strong>{transaction.description}</strong><small>{categoryName(transaction.category_id)}{transaction.description.match(/\(\d+\/\d+\)$/) && <b>Parcelada</b>}</small></div></div>
           <span data-label="Conta">{accountName(transaction.account_id)}</span><span data-label="Data">{formatDate(transaction.date)}</span>
           <strong className={transaction.type === 'Receita' ? 'positive' : 'negative'} data-label="Valor">{transaction.type === 'Receita' ? '+' : '−'} {currency.format(transaction.amount)}</strong>
-          <button className="row-delete" type="button" onClick={() => setPendingDelete(transaction)} aria-label={`Excluir ${transaction.description}`}>×</button>
+          <div className="row-actions"><button type="button" onClick={() => openEdit(transaction)} aria-label={`Editar ${transaction.description}`}>✎</button><button className="row-delete" type="button" onClick={() => setPendingDelete(transaction)} aria-label={`Excluir ${transaction.description}`}>×</button></div>
         </div>)}
       </div> : <div className="transactions-empty"><span>↔</span><h2>Nenhuma transação encontrada</h2><p>Ajuste os filtros ou registre um novo lançamento.</p></div>}
     </section>
@@ -132,19 +142,20 @@ export function TransactionsPage() {
       </article>)}</div>
     </section>
 
-    {drawerOpen && <div className="drawer-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && requestClose()}><aside className="account-drawer transaction-drawer" aria-label="Nova transação"><div className="drawer-heading"><div><p className="eyebrow">NOVO LANÇAMENTO</p><h2>Nova transação</h2></div><button className="close-button" type="button" onClick={requestClose}>×</button></div><form onSubmit={(event) => void submit(event)}>
+    {drawerOpen && <div className="drawer-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && requestClose()}><aside className="account-drawer transaction-drawer" aria-label={editing ? 'Editar transação' : 'Nova transação'}><div className="drawer-heading"><div><p className="eyebrow">{editing ? 'ATUALIZAÇÃO' : 'NOVO LANÇAMENTO'}</p><h2>{editing ? 'Editar transação' : 'Nova transação'}</h2></div><button className="close-button" type="button" onClick={requestClose}>×</button></div><form onSubmit={(event) => void submit(event)}>
       <div className="type-switch"><button className={form.type === 'Despesa' ? 'active expense' : ''} type="button" onClick={() => changeType('Despesa')}>Despesa</button><button className={form.type === 'Receita' ? 'active income' : ''} type="button" onClick={() => changeType('Receita')}>Receita</button></div>
       <label>Descrição<input required value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="Ex.: Compras do mês" /></label>
       <label>Valor<div className="money-input"><span>R$</span><input required min="0.01" type="number" step="0.01" placeholder="0.00" value={form.amount === 0 ? '' : form.amount} onChange={(event) => setForm({ ...form, amount: event.target.value === '' ? 0 : Number(event.target.value) })} /></div></label>
-      <div className="form-columns"><label>Data<input required type="date" value={form.date} onChange={(event) => setForm({ ...form, date: event.target.value })} /></label>{form.type === 'Despesa' && <label>Parcelas<input required min="1" max="120" type="number" placeholder="1" value={form.installments <= 0 ? '' : form.installments} onFocus={(event) => event.currentTarget.select()} onChange={(event) => setForm({ ...form, installments: event.target.value === '' ? 0 : Number(event.target.value) })} /></label>}</div>
+      <div className="form-columns"><label>Data<input required type="date" value={form.date} onChange={(event) => setForm({ ...form, date: event.target.value })} /></label>{form.type === 'Despesa' && !editing && <label>Parcelas<input required min="1" max="120" type="number" placeholder="1" value={form.installments <= 0 ? '' : form.installments} onFocus={(event) => event.currentTarget.select()} onChange={(event) => setForm({ ...form, installments: event.target.value === '' ? 0 : Number(event.target.value) })} /></label>}</div>
+      {editing?.installment_group_id && <p className="form-note">Você está editando somente a parcela {editing.installment_number} de {editing.installment_total}. As demais permanecem inalteradas.</p>}
       <label>Conta<select required value={form.account_id} onChange={(event) => setForm({ ...form, account_id: event.target.value })}><option value="" disabled>Selecione</option>{accounts.map((account) => <option value={account.id} key={account.id}>{account.name}</option>)}</select></label>
       <label>Categoria<select required value={form.category_id} onChange={(event) => setForm({ ...form, category_id: event.target.value })}><option value="" disabled>Selecione</option>{availableCategories.map((category) => <option value={category.id} key={category.id}>{category.name}</option>)}</select></label>
       <label className="check-field"><input type="checkbox" checked={form.is_fixed} onChange={(event) => setForm({ ...form, is_fixed: event.target.checked })} /><span>Marcar como transação fixa</span></label>
-      <div className="drawer-actions"><button className="secondary-button" type="button" onClick={requestClose}>Cancelar</button><button className="primary-button" disabled={saving} type="submit">{saving ? 'Salvando…' : 'Criar transação'}</button></div>
+      <div className="drawer-actions"><button className="secondary-button" type="button" onClick={requestClose}>Cancelar</button><button className="primary-button" disabled={saving} type="submit">{saving ? 'Salvando…' : editing ? 'Salvar alteração' : 'Criar transação'}</button></div>
     </form></aside></div>}
 
     {pendingDelete && <ConfirmDialog title={pendingDelete.installment_group_id ? 'Excluir compra parcelada?' : 'Excluir transação?'} message={pendingDelete.installment_group_id ? <>Esta é a parcela <strong>{pendingDelete.installment_number} de {pendingDelete.installment_total}</strong>. Você pode excluir somente ela ou todas as parcelas da série.</> : <>O valor de <strong>{currency.format(pendingDelete.amount)}</strong> será estornado na conta vinculada.</>} confirmLabel={pendingDelete.installment_group_id ? 'Toda a série' : 'Excluir'} alternateLabel={pendingDelete.installment_group_id ? 'Só esta parcela' : undefined} tone="danger" busy={saving} onCancel={() => setPendingDelete(null)} onAlternate={() => void confirmDelete()} onConfirm={() => pendingDelete.installment_group_id ? void confirmDeleteSeries() : void confirmDelete()} />}
-    {confirmExit && <ConfirmDialog title="Descartar alterações?" message="As informações preenchidas nesta transação serão perdidas." confirmLabel="Descartar" onCancel={() => setConfirmExit(false)} onConfirm={() => { setConfirmExit(false); setDrawerOpen(false); setInitialForm(null) }} />}
+    {confirmExit && <ConfirmDialog title="Descartar alterações?" message="As informações preenchidas nesta transação serão perdidas." confirmLabel="Descartar" onCancel={() => setConfirmExit(false)} onConfirm={() => { setConfirmExit(false); setDrawerOpen(false); setInitialForm(null); setEditing(null) }} />}
   </>
 }
 

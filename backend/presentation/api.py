@@ -10,6 +10,7 @@ from backend.application.services import (
     CreateAccountRequest,
     CreateTransactionRequest,
     SaveCategoryRequest,
+    UpdateTransactionRequest,
 )
 from backend.domain import AccountType, Money, TransactionType
 from backend.infrastructure import ServiceContainer, create_default_service_container
@@ -43,12 +44,22 @@ class TransactionCreate(BaseModel):
     is_fixed: bool = False
 
 
+class TransactionUpdate(BaseModel):
+    amount: float = Field(gt=0)
+    category_id: str
+    account_id: str
+    description: str
+    type: TransactionType
+    date: date
+    is_fixed: bool = False
+
+
 def create_api(container: ServiceContainer | None = None) -> FastAPI:
     services = container or create_default_service_container(
         Path(__file__).resolve().parents[2]
     )
     lock = RLock()
-    api = FastAPI(title="Fincontrol API", version="1.0.0")
+    api = FastAPI(title="GiControl API", version="1.0.0")
 
     @api.exception_handler(ValueError)
     async def value_error_handler(_request, exception: ValueError):
@@ -154,6 +165,18 @@ def create_api(container: ServiceContainer | None = None) -> FastAPI:
             if not services.transactions.delete(transaction_id):
                 raise HTTPException(status_code=404, detail="Transação não encontrada")
         return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+    @api.put("/transactions/{transaction_id}")
+    def update_transaction(transaction_id: str, payload: TransactionUpdate):
+        with lock:
+            transaction = services.transactions.update(transaction_id, UpdateTransactionRequest(
+                amount=Money.from_value(payload.amount), category_id=payload.category_id,
+                account_id=payload.account_id, description=payload.description,
+                transaction_type=payload.type, date=payload.date, is_fixed=payload.is_fixed,
+            ))
+            if transaction is None:
+                raise HTTPException(status_code=404, detail="Transação não encontrada")
+            return _transaction(transaction)
 
     @api.delete("/transaction-series/{group_id}", status_code=status.HTTP_204_NO_CONTENT)
     def delete_transaction_series(group_id: str):

@@ -7,5 +7,6 @@ export type Category = { id: string; name: string; type: TransactionType; monthl
 export type CategoryWrite = { name: string; type: TransactionType; monthly_limit: number }
 export type Transaction = { id: string; amount: number; date: string; category_id: string; account_id: string; description: string; type: 'Receita' | 'Despesa'; is_fixed: boolean; installment_group_id?: string | null; installment_number?: number; installment_total?: number }
 export type TransactionCreate = { amount: number; date: string; category_id: string; account_id: string; description: string; type: TransactionType; installments: number; is_fixed: boolean }
+export type TransactionUpdate = Omit<TransactionCreate, 'installments'>
 export type DashboardMetrics = { current_balance: number; monthly_income: number; monthly_expense: number; savings: number; recent_transactions: Transaction[] }
 export type CategoryBudget = { category_id: string; category_name: string; limit: number; spent: number; remaining: number; usage_percentage: number }

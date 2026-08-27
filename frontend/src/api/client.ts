@@ -1,4 +1,4 @@
-import type { Account, AccountCreate, Category, CategoryBudget, CategoryWrite, DashboardMetrics, Health, Transaction, TransactionCreate } from './types'
+import type { Account, AccountCreate, Category, CategoryBudget, CategoryWrite, DashboardMetrics, Health, Transaction, TransactionCreate, TransactionUpdate } from './types'
 
 type RequestOptions = {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
@@ -42,6 +42,7 @@ export const api = {
   transactions: {
     list: () => request<Transaction[]>('/transactions'),
     create: (transaction: TransactionCreate) => request<Transaction[]>('/transactions', { method: 'POST', body: transaction }),
+    update: (transactionId: string, transaction: TransactionUpdate) => request<Transaction>(`/transactions/${transactionId}`, { method: 'PUT', body: transaction }),
     delete: (transactionId: string) => request<void>(`/transactions/${transactionId}`, { method: 'DELETE' }),
     deleteSeries: (groupId: string) => request<void>(`/transaction-series/${groupId}`, { method: 'DELETE' }),
   },

@@ -14,6 +14,7 @@ from backend.application.services.dashboard_query_service import (
 from backend.application.services.transaction_service import (
     CreateTransactionRequest,
     TransactionService,
+    UpdateTransactionRequest,
 )
 
 __all__ = [
@@ -27,4 +28,5 @@ __all__ = [
     "DashboardQueryService",
     "SaveCategoryRequest",
     "TransactionService",
+    "UpdateTransactionRequest",
 ]

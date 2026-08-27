@@ -20,7 +20,7 @@ function App() {
 
   return <div className="app-shell">
     <aside className="sidebar">
-      <div className="brand"><span className="brand-mark">F</span><div><strong>Fincontrol</strong><small>Gestão financeira</small></div></div>
+      <div className="brand"><img className="brand-logo" src="/gicontrol-logo.png" alt="Logo da GiControl" /><div><strong>GiControl</strong><small>Gestão financeira</small></div></div>
       <nav aria-label="Navegação principal"><p className="nav-label">Menu</p>{navigation.map((item) => <button className={`nav-item ${activePage === item.id ? 'active' : ''}`} key={item.id} type="button" onClick={() => setActivePage(item.id)}><span aria-hidden="true">{item.icon}</span>{item.label}</button>)}</nav>
       <div className="sidebar-footer"><div className={`connection-dot ${connected ? 'online' : ''}`} /><div><span>{connected ? 'API conectada' : 'API desconectada'}</span><small>Persistência SQLite</small></div></div>
     </aside>

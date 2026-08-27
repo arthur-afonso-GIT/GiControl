@@ -19,6 +19,17 @@ class CreateTransactionRequest:
     is_fixed: bool = False
 
 
+@dataclass(frozen=True, slots=True)
+class UpdateTransactionRequest:
+    amount: Money
+    category_id: str
+    account_id: str
+    description: str
+    transaction_type: TransactionType
+    date: date
+    is_fixed: bool = False
+
+
 class TransactionService:
     """Coordena lançamentos e saldos dentro de uma unidade atômica."""
 
@@ -65,6 +76,31 @@ class TransactionService:
 
             uow.transactions.delete(transaction_id)
             return True
+
+    def update(self, transaction_id: str, request: UpdateTransactionRequest) -> Transaction | None:
+        with self._unit_of_work as uow:
+            current = uow.transactions.get(transaction_id)
+            if current is None:
+                return None
+            old_account = uow.accounts.get(current.account_id)
+            new_account = uow.accounts.get(request.account_id)
+            if new_account is None:
+                raise ValueError("Conta não encontrada")
+
+            updated = replace(current, amount=request.amount, date=request.date,
+                category_id=request.category_id, account_id=request.account_id,
+                description=request.description, transaction_type=request.transaction_type,
+                is_fixed=request.is_fixed)
+            old_effect = self._balance_effect(current)
+            new_effect = self._balance_effect(updated)
+            if current.account_id == request.account_id:
+                uow.accounts.save(replace(new_account, balance=new_account.balance - old_effect + new_effect))
+            else:
+                if old_account is not None:
+                    uow.accounts.save(replace(old_account, balance=old_account.balance - old_effect))
+                uow.accounts.save(replace(new_account, balance=new_account.balance + new_effect))
+            uow.transactions.save(updated)
+            return updated
 
     def delete_installment_series(self, group_id: str) -> int:
         with self._unit_of_work as uow:
@@ -135,3 +171,7 @@ class TransactionService:
             31,
         ]
         return date(year, month, min(base_date.day, days[month - 1]))
+
+    @staticmethod
+    def _balance_effect(transaction: Transaction) -> Money:
+        return transaction.amount if transaction.transaction_type == TransactionType.INCOME else Money.zero() - transaction.amount

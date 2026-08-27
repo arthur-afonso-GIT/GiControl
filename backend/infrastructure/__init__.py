@@ -1,4 +1,4 @@
-"""Adapters de infraestrutura do FinControl."""
+"""Adaptadores de infraestrutura da GiControl."""
 
 from backend.infrastructure.data_migration import MigrationResult, migrate_data
 from backend.infrastructure.json_file_data_store import JsonFileDataStore

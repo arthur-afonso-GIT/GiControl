@@ -1,7 +1,7 @@
 import unittest
 from datetime import date
 
-from backend.application.services import CreateTransactionRequest, TransactionService
+from backend.application.services import CreateTransactionRequest, TransactionService, UpdateTransactionRequest
 from backend.domain import Account, AccountType, Money, TransactionType
 from backend.infrastructure import JsonUnitOfWork
 
@@ -91,6 +91,21 @@ class TransactionServiceTests(unittest.TestCase):
 
         self.assertEqual([], self.data["transactions"])
         self.assertEqual(0, self.persist_calls)
+
+    def test_update_rebalances_when_amount_type_and_account_change(self):
+        self.data["accounts"].append({"id": "other", "name": "Outra", "type": "Carteira", "balance": 200.0, "monthly_income": 0.0})
+        transaction = self.service.create(self.request())[0]
+        self.persist_calls = 0
+
+        updated = self.service.update(transaction.id, UpdateTransactionRequest(
+            amount=Money.from_value("50"), category_id="salary", account_id="other",
+            description="Receita corrigida", transaction_type=TransactionType.INCOME,
+            date=date(2027, 1, 5)))
+
+        self.assertEqual(933.34, self.data["accounts"][0]["balance"])
+        self.assertEqual(250.0, self.data["accounts"][1]["balance"])
+        self.assertEqual(transaction.installment_group_id, updated.installment_group_id)
+        self.assertEqual(1, self.persist_calls)
 
 
 if __name__ == "__main__":

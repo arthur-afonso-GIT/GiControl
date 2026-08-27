@@ -1,1 +1,1 @@
-"""Backend do FinControl."""
+"""Backend da GiControl."""

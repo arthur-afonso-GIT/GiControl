@@ -15,7 +15,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.manager = manager
         
-        self.setWindowTitle("FinControl - Gerenciador Financeiro")
+        self.setWindowTitle("GiControl - Gerenciador Financeiro")
         self.resize(1200, 750)
         
         self._setup_ui()
@@ -64,7 +64,7 @@ class MainWindow(QMainWindow):
         sidebar_layout.setContentsMargins(16, 24, 16, 24)
         sidebar_layout.setSpacing(8)
 
-        logo = QLabel("FinControl")
+        logo = QLabel("GiControl")
         logo.setStyleSheet("font-size: 22px; font-weight: bold; color: #00b37e; margin-bottom: 24px; padding-left: 8px;")
         sidebar_layout.addWidget(logo)
 

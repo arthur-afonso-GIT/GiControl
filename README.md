@@ -1,6 +1,6 @@
-# FinControl - Personal Finance Manager
+# GiControl - Gestão Financeira Pessoal
 
-FinControl is a modern, lightweight, and high-performance desktop personal finance application built using Python and PySide6 (Qt for Python). Designed with a clean, dark-themed user interface, it provides seamless transaction tracking, account balance updates, and real-time data synchronization across different views.
+GiControl é uma aplicação de gestão financeira pessoal com frontend React, API FastAPI e persistência SQLite. Durante a transição arquitetural, a interface desktop PySide6 permanece disponível como caminho de compatibilidade.
 
 ---
 

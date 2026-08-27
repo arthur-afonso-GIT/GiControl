@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+from unittest.mock import patch
 from datetime import date
 from pathlib import Path
 
@@ -20,6 +21,13 @@ class ApiTests(unittest.TestCase):
         self.assertEqual({"status": "ok"}, self.client.get("/health").json())
         self.assertEqual([], self.client.get("/accounts").json())
         self.assertEqual(5, len(self.client.get("/categories").json()))
+
+    def test_authentication_can_protect_financial_routes(self):
+        with patch.dict("os.environ", {"AUTH_REQUIRED":"true"}):
+            self.assertEqual(200, self.client.get("/health").status_code)
+            response=self.client.get("/accounts")
+            self.assertEqual(401,response.status_code)
+            self.assertEqual("Autenticação necessária",response.json()["detail"])
 
     def test_account_category_transaction_and_dashboard_flow(self):
         account_response = self.client.post("/accounts", json={
@@ -133,3 +141,16 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(204, response.status_code)
         self.assertEqual([], self.client.get("/transactions").json())
         self.assertEqual(500, self.client.get("/accounts").json()[0]["balance"])
+
+    def test_credit_card_purchase_builds_invoices_without_debiting_account(self):
+        account=self.client.post("/accounts",json={"name":"Principal","type":"Conta Corrente","initial_balance":1000}).json()
+        card_response=self.client.post("/credit-cards",json={"name":"Roxo","credit_limit":900,"closing_day":20,"due_day":28,"payment_account_id":account["id"]})
+        self.assertEqual(201,card_response.status_code);card=card_response.json()
+        purchase=self.client.post(f"/credit-cards/{card['id']}/purchases",json={"category_id":"1","description":"Celular","purchase_date":"2026-08-21","total_amount":300,"installments":3})
+        self.assertEqual(201,purchase.status_code)
+        self.assertEqual([100,100,100],[item["amount"] for item in purchase.json()["installments"]])
+        cards=self.client.get("/credit-cards").json()
+        self.assertEqual(600,cards[0]["available_limit"])
+        invoices=self.client.get(f"/credit-cards/{card['id']}/invoices").json()
+        self.assertEqual(3,len(invoices))
+        self.assertEqual(1000,self.client.get("/accounts").json()[0]["balance"])

@@ -7,6 +7,7 @@ from backend.infrastructure.repositories import (
     JsonCategoryRepository,
     JsonTransactionRepository,
     JsonRecurringExpenseRepository,
+    JsonCreditCardRepository, JsonCardPurchaseRepository, JsonCardInstallmentRepository, JsonCardInvoiceRepository,
 )
 
 
@@ -16,6 +17,10 @@ class JsonUnitOfWork:
     def __init__(self, data: dict, persist):
         self._data = data
         self._data.setdefault("scheduled_expenses", [])
+        self._data.setdefault("credit_cards", [])
+        self._data.setdefault("card_purchases", [])
+        self._data.setdefault("card_installments", [])
+        self._data.setdefault("card_invoices", [])
         self._persist = persist
         self._active = False
         self._dirty = False
@@ -24,6 +29,10 @@ class JsonUnitOfWork:
         self.categories = JsonCategoryRepository(data["categories"], self._changed)
         self.transactions = JsonTransactionRepository(data["transactions"], self._changed)
         self.recurring_expenses = JsonRecurringExpenseRepository(data["scheduled_expenses"], self._changed)
+        self.credit_cards = JsonCreditCardRepository(data["credit_cards"], self._changed)
+        self.card_purchases = JsonCardPurchaseRepository(data["card_purchases"], self._changed)
+        self.card_installments = JsonCardInstallmentRepository(data["card_installments"], self._changed)
+        self.card_invoices = JsonCardInvoiceRepository(data["card_invoices"], self._changed)
 
     def __enter__(self) -> Self:
         if self._active:

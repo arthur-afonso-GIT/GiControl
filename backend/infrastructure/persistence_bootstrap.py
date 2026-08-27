@@ -5,7 +5,9 @@ from pathlib import Path
 from backend.application.ports import DataStore
 from backend.infrastructure.data_migration import migrate_data
 from backend.infrastructure.json_file_data_store import JsonFileDataStore
+from backend.infrastructure.postgres_data_store import PostgresDataStore
 from backend.infrastructure.sqlite_data_store import SqliteDataStore
+from backend.infrastructure.environment import database_url, load_project_environment
 
 
 def create_default_data_store(
@@ -13,13 +15,21 @@ def create_default_data_store(
     mode: str | None = None,
 ) -> DataStore:
     """Seleciona a persistência e migra JSON para SQLite antes da ativação."""
+    load_project_environment(project_dir)
+    url = database_url()
+    if url:
+        if mode and mode.strip().lower() != "postgres":
+            raise ValueError("DATABASE_URL não pode ser combinada com um modo de persistência diferente")
+        return PostgresDataStore(url)
     data_dir = Path(project_dir).resolve() / "data"
     json_path = data_dir / "data.json"
     selected_mode = (mode or os.getenv("FINCONTROL_STORAGE", "sqlite")).strip().lower()
     if selected_mode == "json":
         return JsonFileDataStore(json_path)
+    if selected_mode == "postgres":
+        raise ValueError("O modo 'postgres' exige a variável DATABASE_URL")
     if selected_mode != "sqlite":
-        raise ValueError("FINCONTROL_STORAGE deve ser 'sqlite' ou 'json'")
+        raise ValueError("FINCONTROL_STORAGE deve ser 'sqlite', 'json' ou 'postgres'")
 
     sqlite_path = data_dir / "fincontrol.db"
     if sqlite_path.exists():

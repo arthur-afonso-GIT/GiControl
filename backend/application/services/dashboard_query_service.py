@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import date
 
 from backend.application.ports import UnitOfWork
-from backend.domain import Money, Transaction, TransactionType
+from backend.domain import CARD_INVOICE_PAYMENT_CATEGORY, Money, Transaction, TransactionType
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,6 +32,7 @@ class DashboardQueryService:
             for transaction in transactions
             if transaction.date.year == reference.year
             and transaction.date.month == reference.month
+            and transaction.category_id != CARD_INVOICE_PAYMENT_CATEGORY
         ]
         real_income = self._sum(
             transaction.amount
@@ -43,6 +44,14 @@ class DashboardQueryService:
             for transaction in current_transactions
             if transaction.transaction_type == TransactionType.EXPENSE
         )
+        card_expense = self._sum(
+            installment.amount
+            for card in self._unit_of_work.credit_cards.list_all()
+            for installment in self._unit_of_work.card_installments.list_by_invoice(
+                card.id, date(reference.year, reference.month, 1).isoformat()
+            )
+        )
+        monthly_expense += card_expense
         display_income = (
             real_income if real_income.amount > expected_income.amount else expected_income
         )
@@ -52,7 +61,7 @@ class DashboardQueryService:
             monthly_expense=monthly_expense,
             savings=display_income - monthly_expense,
             recent_transactions=sorted(
-                transactions, key=lambda transaction: transaction.date, reverse=True
+                (item for item in transactions if item.category_id != CARD_INVOICE_PAYMENT_CATEGORY), key=lambda transaction: transaction.date, reverse=True
             )[:5],
         )
 

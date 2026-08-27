@@ -11,3 +11,9 @@ class AccountType(StrEnum):
     CHECKING = "Conta Corrente"
     SAVINGS = "Poupança"
     CREDIT_CARD = "Cartão"
+
+
+class InvoiceStatus(StrEnum):
+    OPEN = "Aberta"
+    CLOSED = "Fechada"
+    PAID = "Paga"

@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from datetime import date
 
-from backend.domain import Money, RecurringExpense
+from backend.domain import Money, OccurrenceException, RecurringExpense
 
 
 class JsonRecurringExpenseRepository:
@@ -29,9 +29,13 @@ class JsonRecurringExpenseRepository:
         return RecurringExpense(id=item["id"], name=item["name"], amount=Money.from_value(item["amount"]),
             account_id=item["account_id"], category_id=item["category_id"], due_day=item["due_day"],
             start_date=date.fromisoformat(item["start_date"]), end_date=date.fromisoformat(item["end_date"]) if item.get("end_date") else None,
-            active=item.get("active", True))
+            active=item.get("active", True), exceptions=tuple(OccurrenceException(month=value["month"],
+                due_date=date.fromisoformat(value["due_date"]) if value.get("due_date") else None,
+                skipped=value.get("skipped", False)) for value in item.get("exceptions", [])))
     @staticmethod
     def _to_record(item):
         return {"id": item.id, "name": item.name, "amount": float(item.amount.amount), "account_id": item.account_id,
             "category_id": item.category_id, "due_day": item.due_day, "start_date": item.start_date.isoformat(),
-            "end_date": item.end_date.isoformat() if item.end_date else None, "active": item.active}
+            "end_date": item.end_date.isoformat() if item.end_date else None, "active": item.active,
+            "exceptions": [{"month": value.month, "due_date": value.due_date.isoformat() if value.due_date else None,
+                            "skipped": value.skipped} for value in item.exceptions]}

@@ -2,3 +2,4 @@
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; min-height: 100vh; }
 button { font: inherit; }
+@media(max-width:760px){input,select,textarea{font-size:16px!important}button,a{touch-action:manipulation}.primary-button,.secondary-button{min-height:44px}}

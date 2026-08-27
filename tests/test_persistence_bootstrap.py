@@ -2,9 +2,11 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from backend.infrastructure import (
     JsonFileDataStore,
+    PostgresDataStore,
     SqliteDataStore,
     create_default_data_store,
 )
@@ -64,3 +66,15 @@ class PersistenceBootstrapTests(unittest.TestCase):
     def test_invalid_mode_fails_fast(self):
         with self.assertRaisesRegex(ValueError, "sqlite.*json"):
             create_default_data_store(self.root, mode="unknown")
+
+    def test_database_url_selects_postgres_without_opening_connection(self):
+        url = "postgresql://user:secret@example.com:5432/gicontrol"
+        with patch.dict("os.environ", {"DATABASE_URL": url}, clear=False):
+            store = create_default_data_store(self.root)
+        self.assertIsInstance(store, PostgresDataStore)
+        self.assertEqual(url, store.database_url)
+
+    def test_postgres_mode_requires_database_url(self):
+        with patch.dict("os.environ", {}, clear=True):
+            with self.assertRaisesRegex(ValueError, "DATABASE_URL"):
+                create_default_data_store(self.root, mode="postgres")

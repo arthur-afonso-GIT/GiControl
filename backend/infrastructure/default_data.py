@@ -11,6 +11,10 @@ _DEFAULT_DATA = {
         {"id": "5", "name": "Investimentos", "type": "Receita", "monthly_limit": 0.0},
     ],
     "transactions": [],
+    "credit_cards": [],
+    "card_purchases": [],
+    "card_installments": [],
+    "card_invoices": [],
 }
 
 

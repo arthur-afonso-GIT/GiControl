@@ -1,0 +1,12 @@
+{
+  "name": "GiControl — Gestão financeira",
+  "short_name": "GiControl",
+  "description": "Gestão financeira pessoal simples e segura.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fbf7fc",
+  "theme_color": "#24132f",
+  "icons": [
+    { "src": "/gicontrol-logo.png", "sizes": "any", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

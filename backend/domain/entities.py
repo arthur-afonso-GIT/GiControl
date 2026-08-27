@@ -78,6 +78,13 @@ class Transaction:
 
 
 @dataclass(frozen=True, slots=True)
+class OccurrenceException:
+    month: str
+    due_date: date | None = None
+    skipped: bool = False
+
+
+@dataclass(frozen=True, slots=True)
 class RecurringExpense:
     id: str
     name: str
@@ -88,6 +95,7 @@ class RecurringExpense:
     start_date: date
     end_date: date | None = None
     active: bool = True
+    exceptions: tuple[OccurrenceException, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "id", _required_text(self.id, "id"))

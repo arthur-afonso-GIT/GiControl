@@ -11,3 +11,8 @@ __pycache__/
 
 # Artefatos derivados do mapeamento arquitetural local
 graphify-out/
+
+# Segredos locais e credenciais de banco
+.env
+.env.*
+!.env.example

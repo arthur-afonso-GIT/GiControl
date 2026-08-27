@@ -1,0 +1,1 @@
+CARD_INVOICE_PAYMENT_CATEGORY = "__card_invoice_payment__"

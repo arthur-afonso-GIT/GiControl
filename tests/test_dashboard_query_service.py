@@ -2,7 +2,7 @@ import unittest
 from datetime import date
 
 from backend.application.services import DashboardQueryService
-from backend.domain import Account, AccountType, Money, Transaction, TransactionType
+from backend.domain import Account, AccountType, CardInstallment, CreditCard, Money, Transaction, TransactionType
 from backend.infrastructure import JsonUnitOfWork
 
 
@@ -53,3 +53,11 @@ class DashboardQueryServiceTests(unittest.TestCase):
         self.assertEqual(Money.from_value("3000"), metrics.monthly_income)
         self.assertEqual(5, len(metrics.recent_transactions))
         self.assertEqual("income-6", metrics.recent_transactions[0].id)
+
+    def test_card_installments_are_monthly_expenses_without_debiting_balance(self):
+        self.uow.credit_cards.save(CreditCard("card", "Roxo", Money.from_value("1000"), 20, 28, "account-1"))
+        self.uow.card_installments.save_all([CardInstallment("part", "purchase", "card", "category-1", "Celular", Money.from_value("125"), 1, 2, date(2026, 8, 1))])
+        metrics = self.service.get_metrics(date(2026, 8, 26))
+        self.assertEqual(Money.from_value("125"), metrics.monthly_expense)
+        self.assertEqual(Money.from_value("1875"), metrics.savings)
+        self.assertEqual(Money.from_value("1700"), metrics.current_balance)

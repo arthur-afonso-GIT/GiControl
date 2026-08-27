@@ -2,7 +2,7 @@ import unittest
 from datetime import date
 
 from backend.application.services import BudgetQueryService
-from backend.domain import Category, Money, Transaction, TransactionType
+from backend.domain import CardInstallment, Category, CreditCard, Money, Transaction, TransactionType
 from backend.infrastructure import JsonUnitOfWork
 
 
@@ -35,6 +35,14 @@ class BudgetQueryServiceTests(unittest.TestCase):
 
         self.assertEqual(Money.from_value("-30"), budget.remaining)
         self.assertEqual("130.00", str(budget.usage_percentage))
+
+    def test_card_installment_consumes_its_category_budget(self):
+        self.uow.categories.save(Category("food", "Alimentação", TransactionType.EXPENSE, Money.from_value("500")))
+        self.uow.credit_cards.save(CreditCard("card", "Roxo", Money.from_value("1000"), 20, 28, "account"))
+        self.uow.card_installments.save_all([CardInstallment("part", "purchase", "card", "food", "Mercado", Money.from_value("140"), 1, 1, date(2026, 8, 1))])
+        budget = self.service.get_month(date(2026, 8, 27))[0]
+        self.assertEqual(Money.from_value("140"), budget.spent)
+        self.assertEqual("28.00", str(budget.usage_percentage))
 
     def _transaction(self, identifier, amount, when, category_id):
         self.uow.transactions.save(Transaction(

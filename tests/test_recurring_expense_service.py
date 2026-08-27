@@ -35,3 +35,19 @@ class RecurringExpenseServiceTests(unittest.TestCase):
     def test_future_occurrence_cannot_be_confirmed(self):
         with self.assertRaisesRegex(ValueError, "data prevista"):
             self.service.confirm(self.expense.id, date(2026, 3, 1), date(2026, 2, 28))
+
+    def test_month_can_be_postponed_without_changing_next_month(self):
+        expense = self.service.save(SaveRecurringExpenseRequest("Água", Money.from_value("50"),
+            "account", "category", 10, date(2026, 3, 1)))
+        self.service.set_month_exception(expense.id, date(2026, 3, 1), date(2026, 3, 20))
+        march = next(item for item in self.service.list_month(date(2026, 3, 1)) if item.expense.id == expense.id)
+        april = next(item for item in self.service.list_month(date(2026, 4, 1)) if item.expense.id == expense.id)
+        self.assertEqual(date(2026, 3, 20), march.due_date)
+        self.assertEqual(date(2026, 4, 10), april.due_date)
+
+    def test_month_can_be_skipped_without_removing_schedule(self):
+        self.service.set_month_exception(self.expense.id, date(2026, 2, 1), skipped=True)
+        self.assertEqual([], self.service.list_month(date(2026, 2, 1)))
+        self.assertEqual(1, len(self.service.list_month(date(2026, 3, 1))))
+        with self.assertRaisesRegex(ValueError, "cancelada"):
+            self.service.confirm(self.expense.id, date(2026, 2, 1), date(2026, 3, 1))

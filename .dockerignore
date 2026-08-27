@@ -1,0 +1,10 @@
+.git
+.env
+.env.*
+!.env.example
+data
+graphify-out
+frontend/node_modules
+frontend/dist
+__pycache__
+*.pyc

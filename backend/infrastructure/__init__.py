@@ -8,6 +8,8 @@ from backend.infrastructure.service_container import (
     create_default_service_container,
 )
 from backend.infrastructure.sqlite_data_store import SqliteDataStore
+from backend.infrastructure.postgres_data_store import PostgresDataStore
+from backend.infrastructure.postgres_unit_of_work import PostgresUnitOfWork
 from backend.infrastructure.unit_of_work import JsonUnitOfWork
 
 __all__ = [
@@ -16,6 +18,8 @@ __all__ = [
     "MigrationResult",
     "ServiceContainer",
     "SqliteDataStore",
+    "PostgresDataStore",
+    "PostgresUnitOfWork",
     "create_default_data_store",
     "create_default_service_container",
     "migrate_data",

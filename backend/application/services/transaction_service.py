@@ -4,7 +4,7 @@ from decimal import Decimal
 from uuid import uuid4
 
 from backend.application.ports import UnitOfWork
-from backend.domain import Money, Transaction, TransactionType
+from backend.domain import CARD_INVOICE_PAYMENT_CATEGORY, Money, Transaction, TransactionType
 
 
 @dataclass(frozen=True, slots=True)
@@ -65,6 +65,8 @@ class TransactionService:
             transaction = uow.transactions.get(transaction_id)
             if transaction is None:
                 return False
+            if transaction.category_id == CARD_INVOICE_PAYMENT_CATEGORY:
+                raise ValueError("Pagamentos de fatura não podem ser excluídos como transações comuns")
 
             account = uow.accounts.get(transaction.account_id)
             if account is not None:
@@ -82,6 +84,8 @@ class TransactionService:
             current = uow.transactions.get(transaction_id)
             if current is None:
                 return None
+            if current.category_id == CARD_INVOICE_PAYMENT_CATEGORY:
+                raise ValueError("Pagamentos de fatura não podem ser editados como transações comuns")
             old_account = uow.accounts.get(current.account_id)
             new_account = uow.accounts.get(request.account_id)
             if new_account is None:

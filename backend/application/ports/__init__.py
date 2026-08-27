@@ -4,6 +4,7 @@ from backend.application.ports.data_store import DataStore
 from backend.application.ports.transaction_repository import TransactionRepository
 from backend.application.ports.recurring_expense_repository import RecurringExpenseRepository
 from backend.application.ports.unit_of_work import UnitOfWork
+from backend.application.ports.credit_card_repository import CardInstallmentRepository, CardInvoiceRepository, CardPurchaseRepository, CreditCardRepository
 
 __all__ = [
     "AccountRepository",
@@ -12,4 +13,8 @@ __all__ = [
     "TransactionRepository",
     "RecurringExpenseRepository",
     "UnitOfWork",
+    "CreditCardRepository",
+    "CardPurchaseRepository",
+    "CardInstallmentRepository",
+    "CardInvoiceRepository",
 ]

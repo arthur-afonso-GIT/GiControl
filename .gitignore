@@ -1,0 +1,13 @@
+# Bancos e backups locais gerados durante a execução/migração
+data/*.db
+data/*.db-wal
+data/*.db-shm
+data/*.bak
+data/.*.db
+
+# Artefatos locais do Python
+__pycache__/
+*.py[cod]
+
+# Artefatos derivados do mapeamento arquitetural local
+graphify-out/

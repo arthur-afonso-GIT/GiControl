@@ -1,0 +1,11 @@
+.dialog-backdrop { position:fixed; inset:0; z-index:40; display:grid; place-items:center; padding:20px; background:rgb(36 19 47 / 44%); backdrop-filter:blur(4px); }
+.confirm-dialog { width:min(380px,100%); padding:28px; border-radius:var(--radius-lg); text-align:center; background:var(--color-surface); box-shadow:0 24px 70px rgb(36 19 47 / 28%); }
+.dialog-icon { width:46px; height:46px; display:grid; place-items:center; margin:0 auto 15px; border-radius:15px; font-size:23px; font-weight:900; }
+.dialog-icon.danger { color:var(--color-danger); background:var(--color-danger-soft); }
+.dialog-icon.primary { color:var(--color-primary); background:var(--color-primary-soft); }
+.confirm-dialog h2 { margin-bottom:8px; }
+.dialog-message { color:var(--color-text-muted); font-size:12px; line-height:1.6; }
+.dialog-actions { display:flex; justify-content:center; gap:9px; margin-top:20px; }
+.dialog-alternate { color:var(--color-danger); }
+.danger-button { min-height:40px; padding:0 18px; border:0; border-radius:var(--radius-sm); color:#fff; background:var(--color-danger); font-size:12px; font-weight:800; cursor:pointer; }
+.danger-button:disabled { opacity:.6; }

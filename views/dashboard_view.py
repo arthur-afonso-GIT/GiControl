@@ -91,7 +91,7 @@ class DashboardView(QWidget):
 
         main_layout.addLayout(bottom_layout, stretch=1)
 
-        self.update_data()
+        self.update_view_data()
 
     def _create_card(self, title, initial_value, value_color):
         card = QFrame()
@@ -113,7 +113,7 @@ class DashboardView(QWidget):
         card.lbl_value = lbl_value 
         return card
 
-    def update_data(self):
+    def update_view_data(self):
         """Puxa dados calculados do Core, atualiza os cards, preenche a tabela e redesenha o gráfico."""
         metrics = self.manager.get_dashboard_metrics()
 
@@ -196,3 +196,7 @@ class DashboardView(QWidget):
             slice_empty.setBrush(QColor("#29292e"))
             slice_empty.setBorderColor(QColor("#19191d"))
             self.chart.addSeries(series)
+
+    def update_data(self):
+        """Mantém compatibilidade com chamadas anteriores ao contrato padronizado."""
+        self.update_view_data()

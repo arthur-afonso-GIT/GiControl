@@ -219,18 +219,7 @@ class CategoriesView(QWidget):
         )
 
         if reply == QMessageBox.Yes:
-            # Verifica se o FinanceManager possui o método específico ou se removemos da lista global
-            # Implementação genérica segura para deletar via manager
-            if hasattr(self.manager, "delete_category"):
-                success = self.manager.delete_category(category_id)
-            else:
-                # Caso o manager gerencie direto pela lista:
-                try:
-                    self.manager.categories = [c for c in self.manager.categories if c["id"] != category_id]
-                    self.manager._save_data() # Salva no JSON
-                    success = True
-                except:
-                    success = False
+            success = self.manager.delete_category(category_id)
 
             if success:
                 self.clear_form()
@@ -265,15 +254,12 @@ class CategoriesView(QWidget):
             return
 
         if self.current_editing_id:
-            # MODO EDIÇÃO: Atualiza os dados da categoria existente
-            categories = self.manager.get_categories()
-            for cat in categories:
-                if cat["id"] == self.current_editing_id:
-                    cat["name"] = name
-                    cat["type"] = cat_type
-                    cat["monthly_limit"] = limit
-                    break
-            self.manager._save_data() # Força a gravação no data.json
+            self.manager.update_category(
+                self.current_editing_id,
+                name,
+                cat_type,
+                limit,
+            )
         else:
             # MODO CADASTRO: Adiciona uma nova normalmente
             self.manager.add_category(name, cat_type, limit)

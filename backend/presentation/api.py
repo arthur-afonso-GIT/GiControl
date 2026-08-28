@@ -151,8 +151,10 @@ def create_api(container: ServiceContainer | None = None) -> FastAPI:
 
     @api.get("/config")
     def public_config():
+        auth_default = "true" if os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_ANON_KEY") else "false"
         return {"supabase_url":os.getenv("SUPABASE_URL", ""),
-                "supabase_anon_key":os.getenv("SUPABASE_ANON_KEY", "")}
+                "supabase_anon_key":os.getenv("SUPABASE_ANON_KEY", ""),
+                "auth_required":os.getenv("AUTH_REQUIRED", auth_default).lower() in {"1", "true", "yes"}}
 
     @api.get("/me")
     def me():
@@ -386,6 +388,47 @@ def create_api(container: ServiceContainer | None = None) -> FastAPI:
                     "pending_expense": float(item.pending_expense.amount),
                     "projected_balance": float(item.projected_balance.amount),
                     "overdue_count": item.overdue_count}
+
+    @api.get("/dashboard-view")
+    def dashboard_view(month: str | None = None):
+        """Entrega a tela inicial em uma única autenticação e viagem HTTP."""
+        reference = _month_reference(month)
+        with lock:
+            metrics = services.dashboard.get_metrics(reference)
+            budget_items = services.budgets.get_month(reference)
+            income_items = services.scheduled_incomes.list_month(reference)
+            summary = services.agenda.get_summary(reference)
+            expense_items = services.recurring_expenses.list_month(reference)
+            return {
+                "metrics": {
+                    "current_balance": float(metrics.current_balance.amount),
+                    "monthly_income": float(metrics.monthly_income.amount),
+                    "monthly_expense": float(metrics.monthly_expense.amount),
+                    "savings": float(metrics.savings.amount),
+                    "recent_transactions": [_transaction(item) for item in metrics.recent_transactions],
+                },
+                "budgets": [{
+                    "category_id": item.category_id, "category_name": item.category_name,
+                    "limit": float(item.limit.amount), "spent": float(item.spent.amount),
+                    "remaining": float(item.remaining.amount),
+                    "usage_percentage": float(item.usage_percentage),
+                } for item in budget_items],
+                "scheduled_incomes": [{
+                    "account_id": item.account_id, "account_name": item.account_name,
+                    "amount": float(item.amount.amount), "due_date": item.due_date.isoformat(),
+                    "category_id": item.category_id, "confirmed": item.confirmed,
+                } for item in income_items],
+                "agenda": {
+                    "current_balance": float(summary.current_balance.amount),
+                    "pending_income": float(summary.pending_income.amount),
+                    "pending_expense": float(summary.pending_expense.amount),
+                    "projected_balance": float(summary.projected_balance.amount),
+                    "overdue_count": summary.overdue_count,
+                },
+                "expenses": [{**_recurring_expense(item.expense),
+                    "due_date": item.due_date.isoformat(), "confirmed": item.confirmed}
+                    for item in expense_items],
+            }
 
     @api.post("/expense-occurrences/{expense_id}/{month}/confirm")
     def confirm_expense_occurrence(expense_id: str, month: str):

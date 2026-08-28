@@ -5,7 +5,7 @@ from pathlib import Path
 
 import httpx
 
-from backend.infrastructure.environment import load_project_environment
+from backend.infrastructure.environment import database_url, load_project_environment
 from backend.infrastructure.auth_context import current_user_id
 from backend.infrastructure.postgres_unit_of_work import PostgresUnitOfWork
 
@@ -70,7 +70,7 @@ def main():
     parser.add_argument("--overwrite",action="store_true")
     args=parser.parse_args();load_project_environment(Path.cwd())
     user=args.user_id or resolve_user_id(args.email)
-    result=migrate(os.environ["DATABASE_URL"],user,args.overwrite)
+    result=migrate(database_url(),user,args.overwrite)
     print("Migração verificada:",", ".join(f"{key}={value}" for key,value in result.items()))
 
 

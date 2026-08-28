@@ -1,4 +1,4 @@
-import type { Account, AccountCreate, AgendaSummary, CardInstallment, CardInvoice, CardInvoiceDetail, CardPurchase, CardPurchaseWrite, Category, CategoryBudget, CategoryWrite, CreditCard, CreditCardWrite, DashboardMetrics, ExpenseOccurrence, Health, MonthlyReport, RecurringExpense, RecurringExpenseWrite, ScheduledIncome, Transaction, TransactionCreate, TransactionUpdate } from './types'
+import type { Account, AccountCreate, AgendaSummary, CardInstallment, CardInvoice, CardInvoiceDetail, CardPurchase, CardPurchaseWrite, Category, CategoryBudget, CategoryWrite, CreditCard, CreditCardWrite, DashboardMetrics, DashboardView, ExpenseOccurrence, Health, MonthlyReport, RecurringExpense, RecurringExpenseWrite, ScheduledIncome, Transaction, TransactionCreate, TransactionUpdate } from './types'
 import { accessToken } from '../auth/supabase'
 
 type RequestOptions = {
@@ -8,15 +8,17 @@ type RequestOptions = {
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const token = await accessToken()
-  const response = await fetch(`/api${path}`, {
-    method: options.method ?? 'GET',
-    headers: {
-      Accept: 'application/json',
-      ...(options.body === undefined ? {} : { 'Content-Type': 'application/json' }),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: options.body === undefined ? undefined : JSON.stringify(options.body),
-  })
+  let response: Response
+  try {
+    response = await fetch(`/api${path}`, {
+      method: options.method ?? 'GET', signal: AbortSignal.timeout(20000),
+      headers: { Accept: 'application/json', ...(options.body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    })
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'TimeoutError') throw new Error('A API demorou mais de 20 segundos para responder.')
+    throw new Error('Não foi possível alcançar a API.')
+  }
   if (!response.ok) {
     const payload = await response.json().catch(() => null) as { detail?: string } | null
     throw new Error(payload?.detail ?? `A API respondeu com o status ${response.status}.`)
@@ -28,6 +30,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 export const api = {
   health: () => request<Health>('/health'),
   dashboard: (month?: string) => request<DashboardMetrics>(`/dashboard${month ? `?month=${encodeURIComponent(month)}` : ''}`),
+  dashboardView: (month: string) => request<DashboardView>(`/dashboard-view?month=${encodeURIComponent(month)}`),
   budgets: (month?: string) => request<CategoryBudget[]>(`/budgets${month ? `?month=${encodeURIComponent(month)}` : ''}`),
   monthlyReport: (month: string) => request<MonthlyReport>(`/reports/monthly?month=${encodeURIComponent(month)}`),
   agendaSummary: (month: string) => request<AgendaSummary>(`/agenda-summary?month=${encodeURIComponent(month)}`),

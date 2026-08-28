@@ -15,6 +15,7 @@ export type RecurringExpense = { id: string; name: string; amount: number; accou
 export type ExpenseOccurrence = RecurringExpense & { due_date: string; confirmed: boolean }
 export type RecurringExpenseWrite = Omit<RecurringExpense, 'id'>
 export type AgendaSummary = { current_balance: number; pending_income: number; pending_expense: number; projected_balance: number; overdue_count: number }
+export type DashboardView = { metrics: DashboardMetrics; budgets: CategoryBudget[]; scheduled_incomes: ScheduledIncome[]; agenda: AgendaSummary; expenses: ExpenseOccurrence[] }
 export type CreditCard = { id: string; name: string; credit_limit: number; available_limit?: number; closing_day: number; due_day: number; payment_account_id: string; active: boolean }
 export type CreditCardWrite = Omit<CreditCard, 'id' | 'available_limit'>
 export type CardPurchaseWrite = { category_id: string; description: string; purchase_date: string; total_amount: number; installments: number }

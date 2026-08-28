@@ -105,6 +105,13 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(120, august["monthly_expense"])
         self.assertEqual(120, september["monthly_expense"])
 
+    def test_dashboard_view_aggregates_initial_screen(self):
+        response = self.client.get("/dashboard-view?month=2026-08")
+        self.assertEqual(200, response.status_code)
+        payload = response.json()
+        self.assertEqual({"metrics", "budgets", "scheduled_incomes", "agenda", "expenses"}, set(payload))
+        self.assertEqual([], payload["budgets"])
+
     def test_deleting_transaction_reverses_balance(self):
         account = self.client.post("/accounts", json={
             "name": "Conta API",

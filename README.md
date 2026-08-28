@@ -30,57 +30,19 @@ The web application combines a React frontend with a FastAPI backend. Data can b
 
 ## Screenshots
 
-> Replace the placeholders below with updated screenshots as the interface evolves.
+The examples below use fictional demonstration data and do not expose user financial information.
 
 ### Dashboard
 
-<!-- Add the dashboard screenshot here. Example:
-<img width="1600" alt="GiControl dashboard" src="SCREENSHOT_URL" />
--->
-
-_Dashboard screenshot coming soon._
+![GiControl financial dashboard](docs/screenshots/dashboard.png)
 
 ### Financial agenda
 
-<!-- Add the financial agenda screenshot here. -->
-
-_Financial agenda screenshot coming soon._
-
-### Transactions
-
-<!-- Add the transactions screenshot here. -->
-
-_Transactions screenshot coming soon._
+![GiControl financial agenda](docs/screenshots/agenda.png)
 
 ### Credit cards
 
-<!-- Add the credit cards screenshot here. -->
-
-_Credit cards screenshot coming soon._
-
-### Accounts
-
-<!-- Add the accounts screenshot here. -->
-
-_Accounts screenshot coming soon._
-
-### Categories and budgets
-
-<!-- Add the categories and budgets screenshot here. -->
-
-_Categories and budgets screenshot coming soon._
-
-### Monthly reports
-
-<!-- Add the monthly reports screenshot here. -->
-
-_Monthly reports screenshot coming soon._
-
-### Mobile experience
-
-<!-- Add one or more mobile screenshots here. -->
-
-_Mobile screenshots coming soon._
+![GiControl credit cards and invoices](docs/screenshots/cards.png)
 
 ## Technology stack
 

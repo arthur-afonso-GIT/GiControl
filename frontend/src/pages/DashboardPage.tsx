@@ -18,8 +18,8 @@ export function DashboardPage({ onConnectionChange }: { onConnectionChange: (con
   const loadDashboard = useCallback(async () => {
     setLoading(true); setError(null)
     try {
-      const [health, dashboard, budgetData, incomeData, agendaData, expenseData] = await Promise.all([api.health(), api.dashboard(month), api.budgets(month), api.scheduledIncomes.list(month), api.agendaSummary(month), api.recurringExpenses.occurrences(month)])
-      onConnectionChange(health.status === 'ok'); setMetrics(dashboard); setBudgets(budgetData); setScheduledIncomes(incomeData); setAgenda(agendaData); setExpenses(expenseData)
+      const view = await api.dashboardView(month)
+      onConnectionChange(true); setMetrics(view.metrics); setBudgets(view.budgets); setScheduledIncomes(view.scheduled_incomes); setAgenda(view.agenda); setExpenses(view.expenses)
     } catch (requestError) {
       onConnectionChange(false)
       setError(requestError instanceof Error ? requestError.message : 'Não foi possível carregar seus dados.')
